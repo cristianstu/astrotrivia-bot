@@ -10,12 +10,22 @@
   "scripts": {
     "start": "node app.js",
     "dev": "node --watch app.js",
+    "register": "node commands.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Cristian Stu",
   "license": "MIT",
   "dependencies": {
+    "discord-interactions": "^4.0.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.5.0",
+    "eslint": "^9.5.0",
+    "globals": "^15.6.0",
+    "typescript": "^5.5.2"
   }
 }
