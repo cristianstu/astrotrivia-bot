@@ -4,10 +4,11 @@ import { InteractionResponseType, InteractionType, verifyKeyMiddleware } from 'd
 
 import { PORT, PUBLIC_KEY } from './constants.js';
 import { getRandomEmoji } from './utils.js';
+import { addReaction, askQuestion } from './commands/question.js';
 
 const app = express();
 
-app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, res) {
+app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), function (req, res) {
   console.log('############## - interaction');
   const { type, data } = req.body || {};
   console.log({ type, data });
@@ -30,6 +31,20 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async function (req, 
         },
       });
     }
+
+    // "pregunta" command
+    if (name === 'pregunta') {
+      const question = askQuestion(req);
+      return res.send(question);
+    }
+  }
+
+  if (type === InteractionType.MESSAGE_COMPONENT) {
+    console.log('############## - message component');
+    // console.log(req.body);
+    const reaction = addReaction(req);
+
+    return res.send(reaction);
   }
 });
 

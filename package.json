@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "node --watch app.js",
-    "register": "node commands.js",
+    "register": "node commands/commands.js",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "test": "echo \"Error: no test specified\" && exit 1"
