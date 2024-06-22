@@ -1,0 +1,17 @@
+{
+  "name": "astrotrivia-bot",
+  "version": "0.0.1",
+  "description": "Trivia bot",
+  "main": "app.js",
+  "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Cristian Stu",
+  "license": "MIT"
+}
