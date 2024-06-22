@@ -8,6 +8,8 @@ import { addReaction, askQuestion } from './commands/question.js';
 
 const app = express();
 
+const games = {}
+
 app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), function (req, res) {
   console.log('############## - interaction');
   const { type, data } = req.body || {};
@@ -34,16 +36,21 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), function (req, res) {
 
     // "pregunta" command
     if (name === 'pregunta') {
-      const question = askQuestion(req);
+      const id = crypto.randomUUID();
+      games[id] = {
+        createdBy: req.body.member.user.id,
+        responses: { A: 0, B: 0, C: 0, D: 0 }
+      };
+      const question = askQuestion(req, id);
       return res.send(question);
     }
   }
 
   if (type === InteractionType.MESSAGE_COMPONENT) {
     console.log('############## - message component');
-    // console.log(req.body);
-    const reaction = addReaction(req);
 
+    const reaction = addReaction(req, games);
+    console.log({ reaction });
     return res.send(reaction);
   }
 });
