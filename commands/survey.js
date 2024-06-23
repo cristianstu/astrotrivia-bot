@@ -74,20 +74,9 @@ export function endPoll(req, games) {
         {
           color: 0x00ff00,
           title: 'Pregunta finalizada',
-          // description: [
-          //   `Pregunta: ${game.question.question}`,
-          //   // `Opción A: ${game.responses['A']}`,
-          //   // `Opción B: ${game.responses['B']}`,
-          //   // `Opción C: ${game.responses['C']}`,
-          //   // `Opción D: ${game.responses['D']}`,
-          // ].join('\n'),
           fields: [
             { name: 'Pregunta', value: game.question.text },
             { name: 'Respuesta correcta', value: correctAnswer },
-            { name: 'Opcion A', value: `contestado por: <@${userId}>` },
-            { name: 'Opcion B', value: '2' },
-            { name: 'Opcion C', value: '3' },
-            { name: 'Opcion D', value: '4' }
           ]
         }
       ]
