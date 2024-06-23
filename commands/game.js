@@ -1,9 +1,11 @@
+import questions from './questions.js';
+
 export class Game {
-  constructor({ mode, createdBy, question }) {
+  constructor({ mode, createdBy }) {
     this.id = crypto.randomUUID();
     this.mode = mode;
     this.createdBy = createdBy;
-    this.question = question;
+    this.question = questions[Math.floor(Math.random() * questions.length)];;
     this.responses = {
       A: { count: 0, users: [] },
       B: { count: 0, users: [] },
@@ -34,5 +36,10 @@ export class Game {
       }
     }
     return { winners, losers };
+  }
+
+  getMostVotedQuestions() {
+    const max = Math.max(...Object.values(this.responses).map((response) => response.count));
+    return Object.entries(this.responses).filter(([_, response]) => response.count === max);
   }
 }

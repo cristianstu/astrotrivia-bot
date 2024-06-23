@@ -1,18 +1,16 @@
 import { ButtonStyleTypes, InteractionResponseType, MessageComponentTypes } from "discord-interactions";
 
-import questions from './questions.js';
 import { discordRequest } from "../utils.js";
 import { Game } from "./game.js";
 
 export function createPoll(req, games) {
   console.log('############## - createPoll');
   // Pick random questions
-  const question = questions[Math.floor(Math.random() * questions.length)];
   const game = new Game({
     mode: 'poll',
-    question,
     createdBy: req.body.member.user.id,
   });
+  const question = game.question
   const gameId = game.id;
   games[gameId] = game;
   const userId = req.body.member.user.id;
@@ -22,7 +20,7 @@ export function createPoll(req, games) {
     data: {
       content: `Pregunta lanzada por <@${userId}>`,
       poll: {
-        question: { text: question.question },
+        question: { text: question.text },
         answers: [
           { poll_media: { text: question.options['A'], emoji: { name: '🇦', id: null } } },
           { poll_media: { text: question.options['B'], emoji: { name: '🇧', id: null } } },
@@ -84,7 +82,7 @@ export function endPoll(req, games) {
           //   // `Opción D: ${game.responses['D']}`,
           // ].join('\n'),
           fields: [
-            { name: 'Pregunta', value: game.question.question },
+            { name: 'Pregunta', value: game.question.text },
             { name: 'Respuesta correcta', value: correctAnswer },
             { name: 'Opcion A', value: `contestado por: <@${userId}>` },
             { name: 'Opcion B', value: '2' },

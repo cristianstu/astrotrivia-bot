@@ -1,5 +1,5 @@
 import { ButtonStyleTypes, InteractionResponseType, MessageComponentTypes } from "discord-interactions";
-import questions from './questions.js';
+
 import { Game } from "./game.js";
 
 function buttonLabel(label, qtty) {
@@ -21,28 +21,27 @@ function answerButton({ answer, gameId, qtty = 0 }) {
 
 export function askQuestion(req, games) {
   console.log('############## - askQuestion');
-  // Pick random questions
-  const question = questions[Math.floor(Math.random() * questions.length)];
   const game = new Game({
     mode: 'custom',
-    question,
     createdBy: req.body.member.user.id,
   });
+
   const gameId = game.id;
   games[gameId] = game;
   const userId = req.body.member.user.id;
+  const question = game.question;
 
   return {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
     data: {
       content: [
         `Pregunta lanzada por <@${userId}>`,
-        `**${question.question}**`,
+        `**${question.text}**`,
         [
-          `:regional_indicator_a: ${question.options['A']}`,
-          `:regional_indicator_b: ${question.options['B']}`,
-          `:regional_indicator_c: ${question.options['C']}`,
-          `:regional_indicator_d: ${question.options['D']}`,
+          `- :regional_indicator_a: ${question.options['A']}`,
+          `- :regional_indicator_b: ${question.options['B']}`,
+          `- :regional_indicator_c: ${question.options['C']}`,
+          `- :regional_indicator_d: ${question.options['D']}`,
         ].join('\n'),
       ].join('\n\n') + '\n-',
       components: [
@@ -87,8 +86,8 @@ export function addReaction(req, games) {
 
   if (action === 'end-question' && game.createdBy === userId) {
     const fields = [
-      { name: 'Pregunta', value: game.question.question },
-      { name: 'Respuesta correcta', value: correctAnswer },
+      { name: 'Pregunta', value: game.question.text },
+      { name: 'Respuesta correcta', value: `${game.question.correct} - ${correctAnswer}` },
     ];
 
     const { winners, losers } = game.getUserResult();
@@ -100,21 +99,19 @@ export function addReaction(req, games) {
       fields.push({ name: 'Perdedores', value: `❌ ${answerBy(losers)}` });
     }
 
-    // if (game.responses['A'].count > 0) {
-    //   fields.push({ name: 'A', value: `contestado por: ${answerBy(game.responses['A'].users)}` });
-    // }
+    const mostVotedQuestions = game.getMostVotedQuestions();
+    console.log(mostVotedQuestions);
+    // [
+    //   [ 'A', { count: 1, users: [Array] } ],
+    //   [ 'B', { count: 1, users: [Array] } ]
+    // ]
+    for (const [key, value] of mostVotedQuestions) {
+      const emoji = game.question.correct === key ? '✅' : '❌';
+      const q = game.question.options[key];
+      fields.push({ name: `Resultado grupal (${value.count}) votos`, value: `${emoji} ${q}` });
+    }
 
-    // if (game.responses['B'].count > 0) {
-    //   fields.push({ name: 'B', value: `contestado por: ${answerBy(game.responses['B'].users)}` });
-    // }
-
-    // if (game.responses['C'].count > 0) {
-    //   fields.push({ name: 'C', value: `contestado por: ${answerBy(game.responses['C'].users)}` });
-    // }
-
-    // if (game.responses['D'].count > 0) {
-    //   fields.push({ name: 'D', value: `contestado por: ${answerBy(game.responses['D'].users)}` });
-    // }
+    const groupIsCorrect = mostVotedQuestions.some(([key]) => key === game.question.correct);
 
     return {
       type: InteractionResponseType.UPDATE_MESSAGE,
@@ -122,7 +119,7 @@ export function addReaction(req, games) {
         components: [],
         embeds: [
         {
-          color: 0x00ff00,
+          color: groupIsCorrect ? 0x00ff00 : 0xff0000,
           title: 'Pregunta finalizada',
           fields,
         }
@@ -134,7 +131,7 @@ export function addReaction(req, games) {
     const responses = game.responses;
     const allUsers = responses['A'].users.concat(responses['B'].users, responses['C'].users, responses['D'].users);
 
-    // IF alread answered, ignore.
+    // If already answered, ignore.
     if (allUsers.includes(userId)) {
       return { type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE };
     }
