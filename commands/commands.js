@@ -16,6 +16,12 @@ const QUESTION_COMMAND = {
   type: 1,
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, QUESTION_COMMAND];
+const POLL_COMMAND = {
+  name: 'encuesta',
+  description: 'Trivia question',
+  type: 1,
+};
+
+const ALL_COMMANDS = [TEST_COMMAND, QUESTION_COMMAND, POLL_COMMAND];
 
 installGlobalCommands(APP_ID, ALL_COMMANDS);

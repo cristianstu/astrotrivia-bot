@@ -5,6 +5,7 @@ import { InteractionResponseType, InteractionType, verifyKeyMiddleware } from 'd
 import { PORT, PUBLIC_KEY } from './constants.js';
 import { getRandomEmoji } from './utils.js';
 import { addReaction, askQuestion } from './commands/question.js';
+import { createPoll, endPoll } from './commands/survey.js';
 
 const app = express();
 
@@ -37,16 +38,30 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), function (req, res) {
     // "pregunta" command
     if (name === 'pregunta') {
       const question = askQuestion(req, games);
+      console.log(question);
+      return res.send(question);
+    }
+
+    if (name === 'encuesta') {
+      const question = createPoll(req, games);
+      console.log(question);
       return res.send(question);
     }
   }
 
   if (type === InteractionType.MESSAGE_COMPONENT) {
     console.log('############## - message component');
+    const customId = req.body.data.custom_id;
+    const [,answer] = customId.split('|');
 
-    const reaction = addReaction(req, games);
-    console.log({ reaction });
-    return res.send(reaction);
+    if (answer === 'end-poll') {
+      const response = endPoll(req, games);
+      return res.send(response);
+    } else {
+      const reaction = addReaction(req, games);
+      console.log({ reaction });
+      return res.send(reaction);
+    }
   }
 });
 
