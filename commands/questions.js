@@ -721,7 +721,7 @@ export default [
       "A": "Tritón",
       "B": "Nereida",
       "C": "Proteo",
-      "D": "Tritón"
+      "D": "Halimede"
     },
     "correct": "A"
   },
