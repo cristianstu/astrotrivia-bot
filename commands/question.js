@@ -27,7 +27,12 @@ export function askQuestion(req, games) {
     mode: 'custom',
     question,
     createdBy: req.body.member.user.id,
-    responses: { A: 0, B: 0, C: 0, D: 0 }
+    responses: {
+      A: { count: 0, users: [] },
+      B: { count: 0, users: [] },
+      C: { count: 0, users: [] },
+      D: { count: 0, users: [] },
+    }
   };
 
   const userId = req.body.member.user.id;
@@ -78,17 +83,45 @@ export function addReaction(req, games) {
   }
 
   const action = customId.split('|')[1];
+  const correctAnswer = game.question.options[game.question.correct];
+
+  const answerBy = (userIds = []) => {
+    return userIds.map((userId) => `<@${userId}>`).join(' ');
+  };
 
   if (action === 'end-question' && game.createdBy === userId) {
     return {
       type: InteractionResponseType.UPDATE_MESSAGE,
-      data: { components: [] }
+      data: {
+        components: [],
+        embeds: [
+        {
+          color: 0x00ff00,
+          title: 'Pregunta finalizada',
+          fields: [
+            { name: 'Pregunta', value: game.question.question },
+            { name: 'Respuesta correcta', value: correctAnswer },
+            { name: 'A', value: `contestado por: ${answerBy(game.responses['A'].users)}` },
+            { name: 'B', value: `contestado por: ${answerBy(game.responses['B'].users)}` },
+            { name: 'C', value: `contestado por: ${answerBy(game.responses['C'].users)}` },
+            { name: 'D', value: `contestado por: ${answerBy(game.responses['D'].users)}` },
+          ]
+        }
+      ]
+      }
     }
   } else {
     const response = customId.split('|')[1];
     const responses = game.responses;
+    const allUsers = responses['A'].users.concat(responses['B'].users, responses['C'].users, responses['D'].users);
 
-    responses[response] += 1;
+    // IF alread answered, ignore.
+    if (allUsers.includes(userId)) {
+      return { type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE };
+    }
+
+    responses[response].count += 1;
+    responses[response].users.push(userId);
 
     console.log({ game, response, customId });
 
@@ -99,10 +132,10 @@ export function addReaction(req, games) {
           {
             type: MessageComponentTypes.ACTION_ROW,
             components: [
-              answerButton({ answer: 'A', gameId, qtty: responses['A']}),
-              answerButton({ answer: 'B', gameId, qtty: responses['B']}),
-              answerButton({ answer: 'C', gameId, qtty: responses['C']}),
-              answerButton({ answer: 'D', gameId, qtty: responses['D']}),
+              answerButton({ answer: 'A', gameId, qtty: responses['A'].count}),
+              answerButton({ answer: 'B', gameId, qtty: responses['B'].count}),
+              answerButton({ answer: 'C', gameId, qtty: responses['C'].count}),
+              answerButton({ answer: 'D', gameId, qtty: responses['D'].count}),
               {
                 type: MessageComponentTypes.BUTTON,
                 custom_id: `${gameId}|end-question`,
