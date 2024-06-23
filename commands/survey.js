@@ -73,10 +73,10 @@ export function endPoll(req, games) {
       embeds: [
         {
           color: 0x00ff00,
-          title: 'Pregunta finalizada',
+          title: 'Encuesta finalizada',
           fields: [
             { name: 'Pregunta', value: game.question.text },
-            { name: 'Respuesta correcta', value: correctAnswer },
+            { name: 'Respuesta correcta', value: correctAnswer }
           ]
         }
       ]
