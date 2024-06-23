@@ -1,53 +1,5 @@
 import { ButtonStyleTypes, InteractionResponseType, MessageComponentTypes } from "discord-interactions";
-
-export function askQuestion(req, gameId) {
-  console.log('############## - askQuestion');
-  const userId = req.body.member.user.id;
-  // User's object choice
-  // const objectName = req.body.data.options[0].value;
-  console.log({ userId });
-  // Formatters.codeBlock('json', JSON.stringify(req.body, null, 2));
-  return {
-    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-    data: {
-      content: `
-        Pregunta lanzada por <@${userId}>
-        - :regional_indicator_a: Opción A\n- :regional_indicator_b: Opción B\n- :regional_indicator_c: Opción c\n- :regional_indicator_d: Opción D
-      `.trim(),
-      components: [
-        {
-          type: MessageComponentTypes.ACTION_ROW,
-          components: [
-            {
-              type: MessageComponentTypes.BUTTON,
-              custom_id: `${gameId}|A`,
-              label: 'A',
-              style: ButtonStyleTypes.PRIMARY,
-            },
-            {
-              type: MessageComponentTypes.BUTTON,
-              custom_id: `${gameId}|B`,
-              label: 'B',
-              style: ButtonStyleTypes.PRIMARY,
-            },
-            {
-              type: MessageComponentTypes.BUTTON,
-              custom_id: `${gameId}|C`,
-              label: 'C',
-              style: ButtonStyleTypes.PRIMARY,
-            },
-            {
-              type: MessageComponentTypes.BUTTON,
-              custom_id: `${gameId}|D`,
-              label: 'D',
-              style: ButtonStyleTypes.PRIMARY,
-            },
-          ],
-        },
-      ],
-    },
-  }
-}
+import questions from './questions.js';
 
 function buttonLabel(label, qtty) {
   if (!qtty) {
@@ -57,57 +9,88 @@ function buttonLabel(label, qtty) {
   return `${label} (${qtty})`;
 }
 
+function answerButton({ answer, gameId, qtty = 0 }) {
+  return {
+    type: MessageComponentTypes.BUTTON,
+    custom_id: `${gameId}|${answer}`,
+    label: buttonLabel(answer, qtty),
+    style: ButtonStyleTypes.PRIMARY,
+  }
+};
+
+export function askQuestion(req, games) {
+  console.log('############## - askQuestion');
+  // Pick random questions
+  const question = questions[Math.floor(Math.random() * questions.length)];
+  const gameId = crypto.randomUUID();
+  games[gameId] = {
+    question,
+    createdBy: req.body.member.user.id,
+    responses: { A: 0, B: 0, C: 0, D: 0 }
+  };
+
+  const userId = req.body.member.user.id;
+
+  console.log({ userId });
+
+  return {
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    data: {
+      content: [
+        `Pregunta lanzada por <@${userId}>`,
+        `**${question.question}**`,
+        [
+          `- :regional_indicator_a: ${question.options['A']}`,
+          `- :regional_indicator_b: ${question.options['B']}`,
+          `- :regional_indicator_c: ${question.options['C']}`,
+          `- :regional_indicator_d: ${question.options['D']}`,
+        ].join('\n'),
+      ].join('\n\n'),
+      components: [
+        {
+          type: MessageComponentTypes.ACTION_ROW,
+          components: [
+            answerButton({ answer: 'A', gameId }),
+            answerButton({ answer: 'B', gameId }),
+            answerButton({ answer: 'C', gameId }),
+            answerButton({ answer: 'D', gameId }),
+          ],
+        },
+      ],
+    },
+  }
+}
+
 export function addReaction(req, games) {
   console.log('############## - addReaction');
   const customId = req.body.data.custom_id;
   const gameId = customId.split('|')[0];
   const game = games[gameId];
+
+  if (!game) {
+    return { type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE };
+  }
+
   const response = customId.split('|')[1];
   const responses = game.responses;
 
   responses[response] += 1;
-  // console.log({ body: req.body }
-  // console.log({ message });
+
   console.log({ game, response, customId });
 
-  // return { type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE };
   return {
     type: InteractionResponseType.UPDATE_MESSAGE,
     data: {
-      content: `
-        Pregunta lanzada por <@${game.createdBy}>
-        - :regional_indicator_a: Opción A\n- :regional_indicator_b: Opción B\n- :regional_indicator_c: Opción c\n- :regional_indicator_d: Opción D
-      `.trim(),
       components: [
         {
           type: MessageComponentTypes.ACTION_ROW,
           components: [
-            {
-              type: MessageComponentTypes.BUTTON,
-              custom_id: `${gameId}|A`,
-              label: buttonLabel('A', responses['A']),
-              style: ButtonStyleTypes.PRIMARY,
-            },
-            {
-              type: MessageComponentTypes.BUTTON,
-              custom_id: `${gameId}|B`,
-              label: buttonLabel('B', responses['B']),
-              style: ButtonStyleTypes.PRIMARY,
-            },
-            {
-              type: MessageComponentTypes.BUTTON,
-              custom_id: `${gameId}|C`,
-              label: buttonLabel('C', responses['C']),
-              style: ButtonStyleTypes.PRIMARY,
-            },
-            {
-              type: MessageComponentTypes.BUTTON,
-              custom_id: `${gameId}|D`,
-              label: buttonLabel('D', responses['D']),
-              style: ButtonStyleTypes.PRIMARY,
-            },
+            answerButton({ answer: 'A', gameId, qtty: responses['A']}),
+            answerButton({ answer: 'B', gameId, qtty: responses['B']}),
+            answerButton({ answer: 'C', gameId, qtty: responses['C']}),
+            answerButton({ answer: 'D', gameId, qtty: responses['D']}),
           ],
-        },
+        }
       ],
     }
   }

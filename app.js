@@ -36,12 +36,7 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), function (req, res) {
 
     // "pregunta" command
     if (name === 'pregunta') {
-      const id = crypto.randomUUID();
-      games[id] = {
-        createdBy: req.body.member.user.id,
-        responses: { A: 0, B: 0, C: 0, D: 0 }
-      };
-      const question = askQuestion(req, id);
+      const question = askQuestion(req, games);
       return res.send(question);
     }
   }
