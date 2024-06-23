@@ -11,6 +11,10 @@ const app = express();
 
 const games = {}
 
+app.get('/ping', (req, res) => {
+  res.send('pong');
+});
+
 app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), function (req, res) {
   console.log('############## - interaction');
   const { type, data } = req.body || {};
