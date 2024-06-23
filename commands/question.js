@@ -1,5 +1,6 @@
 import { ButtonStyleTypes, InteractionResponseType, MessageComponentTypes } from "discord-interactions";
 import questions from './questions.js';
+import { Game } from "./game.js";
 
 function buttonLabel(label, qtty) {
   if (!qtty) {
@@ -22,19 +23,13 @@ export function askQuestion(req, games) {
   console.log('############## - askQuestion');
   // Pick random questions
   const question = questions[Math.floor(Math.random() * questions.length)];
-  const gameId = crypto.randomUUID();
-  games[gameId] = {
+  const game = new Game({
     mode: 'custom',
     question,
     createdBy: req.body.member.user.id,
-    responses: {
-      A: { count: 0, users: [] },
-      B: { count: 0, users: [] },
-      C: { count: 0, users: [] },
-      D: { count: 0, users: [] },
-    }
-  };
-
+  });
+  const gameId = game.id;
+  games[gameId] = game;
   const userId = req.body.member.user.id;
 
   return {
@@ -44,12 +39,12 @@ export function askQuestion(req, games) {
         `Pregunta lanzada por <@${userId}>`,
         `**${question.question}**`,
         [
-          `- :regional_indicator_a: ${question.options['A']}`,
-          `- :regional_indicator_b: ${question.options['B']}`,
-          `- :regional_indicator_c: ${question.options['C']}`,
-          `- :regional_indicator_d: ${question.options['D']}`,
+          `:regional_indicator_a: ${question.options['A']}`,
+          `:regional_indicator_b: ${question.options['B']}`,
+          `:regional_indicator_c: ${question.options['C']}`,
+          `:regional_indicator_d: ${question.options['D']}`,
         ].join('\n'),
-      ].join('\n\n'),
+      ].join('\n\n') + '\n-',
       components: [
         {
           type: MessageComponentTypes.ACTION_ROW,
@@ -83,13 +78,44 @@ export function addReaction(req, games) {
   }
 
   const action = customId.split('|')[1];
-  const correctAnswer = game.question.options[game.question.correct];
+  const correctAnswer = game.getAnswer();
+  // console.log({ game, customId, correctAnswer });
 
   const answerBy = (userIds = []) => {
     return userIds.map((userId) => `<@${userId}>`).join(' ');
   };
 
   if (action === 'end-question' && game.createdBy === userId) {
+    const fields = [
+      { name: 'Pregunta', value: game.question.question },
+      { name: 'Respuesta correcta', value: correctAnswer },
+    ];
+
+    const { winners, losers } = game.getUserResult();
+    if (winners.length > 0) {
+      fields.push({ name: 'Ganadores', value: `✅ ${answerBy(winners)}` });
+    }
+
+    if (losers.length > 0) {
+      fields.push({ name: 'Perdedores', value: `❌ ${answerBy(losers)}` });
+    }
+
+    // if (game.responses['A'].count > 0) {
+    //   fields.push({ name: 'A', value: `contestado por: ${answerBy(game.responses['A'].users)}` });
+    // }
+
+    // if (game.responses['B'].count > 0) {
+    //   fields.push({ name: 'B', value: `contestado por: ${answerBy(game.responses['B'].users)}` });
+    // }
+
+    // if (game.responses['C'].count > 0) {
+    //   fields.push({ name: 'C', value: `contestado por: ${answerBy(game.responses['C'].users)}` });
+    // }
+
+    // if (game.responses['D'].count > 0) {
+    //   fields.push({ name: 'D', value: `contestado por: ${answerBy(game.responses['D'].users)}` });
+    // }
+
     return {
       type: InteractionResponseType.UPDATE_MESSAGE,
       data: {
@@ -98,14 +124,7 @@ export function addReaction(req, games) {
         {
           color: 0x00ff00,
           title: 'Pregunta finalizada',
-          fields: [
-            { name: 'Pregunta', value: game.question.question },
-            { name: 'Respuesta correcta', value: correctAnswer },
-            { name: 'A', value: `contestado por: ${answerBy(game.responses['A'].users)}` },
-            { name: 'B', value: `contestado por: ${answerBy(game.responses['B'].users)}` },
-            { name: 'C', value: `contestado por: ${answerBy(game.responses['C'].users)}` },
-            { name: 'D', value: `contestado por: ${answerBy(game.responses['D'].users)}` },
-          ]
+          fields,
         }
       ]
       }
@@ -120,10 +139,9 @@ export function addReaction(req, games) {
       return { type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE };
     }
 
-    responses[response].count += 1;
-    responses[response].users.push(userId);
+    game.answer(userId, response);
 
-    console.log({ game, response, customId });
+    // console.log({ game, response, customId });
 
     return {
       type: InteractionResponseType.UPDATE_MESSAGE,

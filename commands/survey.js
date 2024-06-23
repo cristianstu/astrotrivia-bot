@@ -1,23 +1,20 @@
 import { ButtonStyleTypes, InteractionResponseType, MessageComponentTypes } from "discord-interactions";
+
 import questions from './questions.js';
 import { discordRequest } from "../utils.js";
+import { Game } from "./game.js";
 
 export function createPoll(req, games) {
   console.log('############## - createPoll');
   // Pick random questions
   const question = questions[Math.floor(Math.random() * questions.length)];
-  const gameId = crypto.randomUUID();
-  games[gameId] = {
+  const game = new Game({
     mode: 'poll',
     question,
     createdBy: req.body.member.user.id,
-    responses: {
-      A: { count: 0, users: [] },
-      B: { count: 0, users: [] },
-      C: { count: 0, users: [] },
-      D: { count: 0, users: [] },
-    }
-  };
+  });
+  const gameId = game.id;
+  games[gameId] = game;
   const userId = req.body.member.user.id;
 
   return {
@@ -69,7 +66,7 @@ export function endPoll(req, games) {
 
   discordRequest(`/channels/${channel.id}/polls/${message.id}/expire`, { method: 'POST' });
 
-  const correctAnswer = game.question.options[game.question.correct];
+  const correctAnswer = game.getAnswer();
 
   return {
     type: InteractionResponseType.UPDATE_MESSAGE,
