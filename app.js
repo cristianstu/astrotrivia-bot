@@ -11,7 +11,8 @@ const app = express();
 
 const games = {}
 
-app.get('/ping', (req, res) => {
+app.get('/ping', (_req, res) => {
+  console.log({ ping: 'pong' });
   res.send('pong');
 });
 
